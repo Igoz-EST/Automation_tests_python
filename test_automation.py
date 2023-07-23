@@ -1,3 +1,4 @@
+import pytest
 import requests
 import json
 
@@ -79,7 +80,93 @@ def test_can_put_to_all_brands():
 ## --------------- API 5: POST To Search Product ---------------
 
 
+def test_can_post_to_search_product():
 
-## def test_can_search_product():
+    payload = {"search_product": "tshirt"}
+    response = requests.post(ENDPOINT + "/searchProduct", data=payload)
+    data = response.json()
+    product_list = data["products"]
+    assert data["responseCode"] == 200
+    for product in product_list:
+       category = product["category"]
+       assert category["category"] == 'Tshirts', "Response has not only Tshirts"
+
+## --------------- API 6: POST To Search Product without search_product parameter ---------------
+
+def test_can_post_to_search_product_without_search_parameter():
+    response = requests.post(ENDPOINT + "/searchProduct")
+    data = response.json()
+    assert data["responseCode"] == 400
+    assert data["message"] == "Bad request, search_product parameter is missing in POST request."
 
 
+## --------------- API 7: POST To Verify Login with valid details --------------- ???????????????
+
+def test_can_post_to_verify_login_valid_details():
+    payload = {
+               "email": "email@mail.ru",
+               "password": "password"
+               }
+    response = requests.post(ENDPOINT + "/verifyLogin", data=payload)
+    data = response.json()
+  ##  assert data["responseCode"] == 200
+4
+
+## --------------- API 8: POST To Verify Login without email parameter ---------------
+
+def test_can_post_to_verify_login_without_parameter():
+    payload = {
+               "password": "123123"
+               }
+    response = requests.post(ENDPOINT + "/verifyLogin", data=payload)
+    data = response.json()
+    assert data["responseCode"] == 400
+    assert data["message"] == "Bad request, email or password parameter is missing in POST request."
+
+## --------------- API 9: DELETE To Verify Login ---------------
+
+def test_can_delete_to_verify_login():
+    response = requests.delete(ENDPOINT + "/verifyLogin")
+    data = response.json()
+    assert data["responseCode"] == 405
+    assert data["message"] == "This request method is not supported."
+
+## --------------- API 10: POST To Verify Login with invalid details ---------------
+
+def test_can_post_to_verify_login_invalid_details():
+    payload = {
+               "email": "asdasd",
+               "password": 123
+               }
+    response = requests.post(ENDPOINT + "/verifyLogin", data=payload)
+    data = response.json()
+    assert data["responseCode"] == 404
+    assert data["message"] == "User not found!"
+
+## --------------- API 11: POST To Create/Register User Account ---------------
+
+def test_can_post_to_create_user_account():
+    payload = {
+               "name": "Ivanchik",
+               "email": "Ivan",
+               "password": "123123",
+               "title ": "Mr",
+               "birth_date": "17",
+               "birth_month ": "06",
+               "birth_year ": "1999",
+               "firstname ": "Ivan",
+               "lastname ": "Ivanov",
+               "company ": "IvanCompany",
+               "address1 ": "Ivan-45",
+               "address2 ": "Ivan-46",
+               "country ": "Ivan",
+               "zipcode ": "Ivan",
+               "state ": "Ivan",
+               "city ": "Ivan",
+               "mobile_number ": "+37258495837",
+               }
+    response = requests.post(ENDPOINT + "/createAccount", data=payload)
+    data = response.json()
+    # assert data["responseCode"] == 400
+    # assert data["message"] == "Bad request, email or password parameter is missing in POST request."
+    print(data)
