@@ -1,7 +1,8 @@
 import pytest
 import requests
 import json
-
+import random
+import string
 
 ENDPOINT = "https://automationexercise.com/api"
 
@@ -100,17 +101,17 @@ def test_can_post_to_search_product_without_search_parameter():
     assert data["message"] == "Bad request, search_product parameter is missing in POST request."
 
 
-## --------------- API 7: POST To Verify Login with valid details --------------- ???????????????
+## --------------- API 7: POST To Verify Login with valid details ---------------
 
 def test_can_post_to_verify_login_valid_details():
     payload = {
-               "email": "email@mail.ru",
-               "password": "password"
+               "email": "milo@mail.com",
+               "password": "123123"
                }
     response = requests.post(ENDPOINT + "/verifyLogin", data=payload)
     data = response.json()
-  ##  assert data["responseCode"] == 200
-4
+    assert data["responseCode"] == 200
+    assert data["message"] == "User exists!"
 
 ## --------------- API 8: POST To Verify Login without email parameter ---------------
 
@@ -145,28 +146,128 @@ def test_can_post_to_verify_login_invalid_details():
 
 ## --------------- API 11: POST To Create/Register User Account ---------------
 
+def generate_random_string_without_repeats(length):
+    characters = string.ascii_letters + string.digits + string.punctuation
+    random_string = ''.join(random.sample(characters, k=length))
+    return random_string
+
+random_email = generate_random_string_without_repeats(10)
+
 def test_can_post_to_create_user_account():
+
     payload = {
                "name": "Ivanchik",
-               "email": "Ivan",
+               "email": f'{random_email}@mail.com',
                "password": "123123",
-               "title ": "Mr",
+               "title": "Mr",
                "birth_date": "17",
-               "birth_month ": "06",
-               "birth_year ": "1999",
-               "firstname ": "Ivan",
-               "lastname ": "Ivanov",
-               "company ": "IvanCompany",
-               "address1 ": "Ivan-45",
-               "address2 ": "Ivan-46",
-               "country ": "Ivan",
-               "zipcode ": "Ivan",
-               "state ": "Ivan",
-               "city ": "Ivan",
-               "mobile_number ": "+37258495837",
+               "birth_month": "06",
+               "birth_year": "1999",
+               "firstname": "Ivan",
+               "lastname": "Ivanov",
+               "company": "IvanCompany",
+               "address1": "Ivan-45",
+               "address2": "Ivan-46",
+               "country": "Ivan",
+               "zipcode": "Ivan",
+               "state": "Ivan",
+               "city": "Ivan",
+               "mobile_number": "+37258495837",
                }
     response = requests.post(ENDPOINT + "/createAccount", data=payload)
     data = response.json()
-    # assert data["responseCode"] == 400
-    # assert data["message"] == "Bad request, email or password parameter is missing in POST request."
-    print(data)
+    assert data["responseCode"] == 201
+    assert data["message"] == "User created!"
+
+## --------------- API 12: DELETE METHOD To Delete User Account ---------------
+
+@pytest.fixture
+def random_email():
+    characters = string.ascii_letters + string.digits
+    email = ''.join(random.choices(characters, k=10)) + "@mail.com" ## GEnerating the random email
+    return email
+
+@pytest.fixture
+def test_create_user(random_email): ## Passing the random email to the test_create_user fixture
+    payload = {
+               "name": "Ivanchik",
+               "email": random_email,
+               "password": "password",
+               "title": "Mr",
+               "birth_date": "17",
+               "birth_month": "06",
+               "birth_year": "1999",
+               "firstname": "Ivan",
+               "lastname": "Ivanov",
+               "company": "IvanCompany",
+               "address1": "Ivan-45",
+               "address2": "Ivan-46",
+               "country": "Ivan",
+               "zipcode": "Ivan",
+               "state": "Ivan",
+               "city": "Ivan",
+               "mobile_number": "+37258495837",
+               }
+    requests.post(ENDPOINT + "/createAccount", data=payload)
+    return payload["email"] ## Can i return more than 2 values? how will it look like?
+
+@pytest.fixture
+def test_can_post_to_delete_user_account(test_create_user): ## test_create_user fixture is returning the random email
+     payload = {
+               "email": test_create_user, ## Variable name is shit, i know. I will fix it after finishing the exam.
+               "password": "password",
+               }
+     response = requests.delete(ENDPOINT + "/deleteAccount", data=payload) ## Deleting the user with the generated email
+     data = response.json()
+     assert data["responseCode"] == 200
+     assert data["message"] == "Account deleted!"
+     yield test_create_user ## Stoping the fixture executing and return the random email back to the test function
+
+
+def test_user_not_exist(test_can_post_to_delete_user_account):
+    email = test_can_post_to_delete_user_account
+    payload = {
+               "email": email,
+               "password": "password"
+               }
+    response = requests.post(ENDPOINT + "/verifyLogin", data=payload)
+    data = response.json()
+    assert data["responseCode"] == 404
+    assert data["message"] == "User not found!"
+
+## --------------- API 13: PUT METHOD To Update User Account ---------------
+
+@pytest.fixture
+def test_create_user_for_update(random_email): ## Passing the random email to the test_create_user fixture
+    payload = {
+               "name": "Ivanchik",
+               "email": random_email,
+               "password": "password",
+               "title": "Mr",
+               "birth_date": "17",
+               "birth_month": "06",
+               "birth_year": "1999",
+               "firstname": "Ivan",
+               "lastname": "Ivanov",
+               "company": "IvanCompany",
+               "address1": "Ivan-45",
+               "address2": "Ivan-46",
+               "country": "Ivan",
+               "zipcode": "Ivan",
+               "state": "Ivan",
+               "city": "Ivan",
+               "mobile_number": "+37258495837",
+               }
+    requests.post(ENDPOINT + "/createAccount", data=payload)
+    return payload["email"] ## Can i return more than 2 values? how will it look like?
+
+@pytest.fixture
+def test_user_not_exist(test_create_user_for_update):
+    email = test_create_user_for_update
+    payload = {
+               "email": email
+               }
+    response = requests.post(ENDPOINT + "/getUserDetailByEmail", data=payload)
+    data = response.json()
+    assert data["responseCode"] == 200
+    assert data["message"] == "User not found!"
