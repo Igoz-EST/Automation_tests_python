@@ -12,7 +12,6 @@ def test_can_get_all_products():
     response = requests.get(ENDPOINT + "/productsList")
 ##    assert response.status_code == 200 ## Checking for the needed status code
     data = response.json()
-   ## print(data)
     assert data is not None and data != {} , "Data is absent"
     assert "products" in data, "products was not found" ## checking, that data in response has the "products" object
     products_list = data["products"] ## Writing the "products" object from the response into "products_list" variable, to use it in the for cycle
@@ -235,12 +234,12 @@ def test_user_not_exist(test_can_post_to_delete_user_account):
     assert data["responseCode"] == 404
     assert data["message"] == "User not found!"
 
-## --------------- API 13: PUT METHOD To Update User Account ---------------
+## --------------- API 13: PUT METHOD To Update User Account/API 14: GET user account detail by email  ---------------
 
 @pytest.fixture
 def test_create_user_for_update(random_email): ## Passing the random email to the test_create_user fixture
     payload = {
-               "name": "Ivanchik",
+               "name": "Ivan",
                "email": random_email,
                "password": "password",
                "title": "Mr",
@@ -259,15 +258,56 @@ def test_create_user_for_update(random_email): ## Passing the random email to th
                "mobile_number": "+37258495837",
                }
     requests.post(ENDPOINT + "/createAccount", data=payload)
-    return payload["email"] ## Can i return more than 2 values? how will it look like?
+    return payload
 
 @pytest.fixture
-def test_user_not_exist(test_create_user_for_update):
-    email = test_create_user_for_update
+def test_update_user(test_create_user_for_update):
+    email = test_create_user_for_update["email"]
     payload = {
-               "email": email
+               "name": "Ivanchiiiks",
+               "email": email,
+               "password": "password",
+               "title": "Mr",
+               "birth_date": "17",
+               "birth_month": "06",
+               "birth_year": "1998",
+               "firstname": "Ivanchik",
+               "lastname": "Ivanov",
+               "company": "IvanCompany",
+               "address1": "Ivan-455",
+               "address2": "Ivan-466",
+               "country": "Ivanovka",
+               "zipcode": "Ivan123",
+               "state": "IvanuMaa",
+               "city": "IvanCity",
+               "mobile_number": "+37258495833",
                }
-    response = requests.post(ENDPOINT + "/getUserDetailByEmail", data=payload)
+    response = requests.put(ENDPOINT + "/updateAccount", data=payload)
     data = response.json()
     assert data["responseCode"] == 200
-    assert data["message"] == "User not found!"
+    assert data["message"] == "User updated!"
+    return payload
+
+def test_updated_user(test_update_user):
+    payload = {"email": test_update_user["email"]}
+    response = requests.get(ENDPOINT + "/getUserDetailByEmail", params=payload)
+    data = response.json()
+    user_data = data["user"]
+    assert data["responseCode"] == 200
+    assert user_data["name"] == test_update_user["name"]
+    assert user_data["email"] == test_update_user["email"]
+    # assert user_data["password"] == test_update_user["password"] this field is not returned. Expected))))
+    assert user_data["title"] == test_update_user["title"]
+    assert user_data["birth_day"] == test_update_user["birth_date"] ## WTF??? bug. Keys name are different
+    assert user_data["birth_month"] == test_update_user["birth_month"]
+    assert user_data["birth_year"] == test_update_user["birth_year"]
+    assert user_data["first_name"] == test_update_user["firstname"]
+    assert user_data["last_name"] == test_update_user["lastname"]
+    assert user_data["company"] == test_update_user["company"]
+    assert user_data["address1"] == test_update_user["address1"]
+    assert user_data["address2"] == test_update_user["address2"]
+    assert user_data["country"] == test_update_user["country"]
+    assert user_data["zipcode"] == test_update_user["zipcode"]
+    assert user_data["state"] == test_update_user["state"]
+    assert user_data["city"] == test_update_user["city"]
+    # assert user_data["mobile_number"] == test_update_user["mobile_number"] where is mobile??? lol. Get request doesn't returned the mobile
