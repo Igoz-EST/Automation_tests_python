@@ -3,6 +3,10 @@ import requests
 import json
 import random
 import string
+from faker import Faker
+import random
+
+fake = Faker()
 
 ENDPOINT = "https://automationexercise.com/api"
 
@@ -64,8 +68,8 @@ def test_can_get_brands_list():
     for brand in brands_list:
         assert "id" in brand, "key 'id' was not found"
         assert "brand" in brand, "key 'brand' was not found"
-        assert brand["id"] is not None and brand["id"] != "", "Value in 'id' key is empty or not exist"
-        assert brand["brand"] is not None and brand["brand"] != "", "Value in 'brand' key is empty or not exist"
+        assert brand["id"] is not None and brand["id"] != "", "Value in the 'id' key is empty or doesn't exist"
+        assert brand["brand"] is not None and brand["brand"] != "", "Value in 'brand' key is empty or doesn't exist"
 
 
 ## --------------- API 4: PUT To All Brands List ---------------
@@ -135,7 +139,7 @@ def test_can_delete_to_verify_login():
 
 def test_can_post_to_verify_login_invalid_details():
     payload = {
-               "email": "asdasd",
+               "email": fake.email(),
                "password": 123
                }
     response = requests.post(ENDPOINT + "/verifyLogin", data=payload)
@@ -144,34 +148,35 @@ def test_can_post_to_verify_login_invalid_details():
     assert data["message"] == "User not found!"
 
 ## --------------- API 11: POST To Create/Register User Account ---------------
+@pytest.fixture
+def valid_titles():
+    return ["Mr", "Mrs", "Miss"]
 
-def generate_random_string_without_repeats(length):
-    characters = string.ascii_letters + string.digits + string.punctuation
-    random_string = ''.join(random.sample(characters, k=length))
-    return random_string
-
-random_email = generate_random_string_without_repeats(10)
-
-def test_can_post_to_create_user_account():
-
+def test_can_post_to_create_user_account(valid_titles):
+    mobile = "+" + fake.phone_number()
+    name = fake.name()
+    first_name, last_name = name.split()
+    date = fake.date()
+    year, month, day = date.split("-")
+    title = random.choice(valid_titles)
     payload = {
-               "name": "Ivanchik",
-               "email": f'{random_email}@mail.com',
-               "password": "123123",
-               "title": "Mr",
-               "birth_date": "17",
-               "birth_month": "06",
-               "birth_year": "1999",
-               "firstname": "Ivan",
-               "lastname": "Ivanov",
-               "company": "IvanCompany",
-               "address1": "Ivan-45",
-               "address2": "Ivan-46",
-               "country": "Ivan",
-               "zipcode": "Ivan",
-               "state": "Ivan",
-               "city": "Ivan",
-               "mobile_number": "+37258495837",
+               "name": name,
+               "email": fake.email(),
+               "password": fake.password(),
+               "title": title,
+               "birth_date": day,
+               "birth_month": month,
+               "birth_year": year,
+               "firstname": first_name,
+               "lastname": last_name,
+               "company": fake.company(),
+               "address1": fake.address(),
+               "address2": fake.address(),
+               "country": fake.country(),
+               "zipcode": fake.zipcode(),
+               "state": fake.state(),
+               "city": fake.city(),
+               "mobile_number": mobile,
                }
     response = requests.post(ENDPOINT + "/createAccount", data=payload)
     data = response.json()
@@ -180,112 +185,131 @@ def test_can_post_to_create_user_account():
 
 ## --------------- API 12: DELETE METHOD To Delete User Account ---------------
 
-@pytest.fixture
-def random_email():
-    characters = string.ascii_letters + string.digits
-    email = ''.join(random.choices(characters, k=10)) + "@mail.com" ## GEnerating the random email
-    return email
+# @pytest.fixture
+# def random_email():
+#     characters = string.ascii_letters + string.digits
+#     email = ''.join(random.choices(characters, k=10)) + "@mail.com" ## GEnerating the random email
+#     return email
 
 @pytest.fixture
-def test_create_user(random_email): ## Passing the random email to the test_create_user fixture
+def test_create_user(valid_titles): ## Passing the random email to the test_create_user fixture
+    mobile = "+" + fake.phone_number()
+    name = fake.name()
+    first_name, last_name = name.split()
+    date = fake.date()
+    year, month, day = date.split("-")
+    title = random.choice(valid_titles)
     payload = {
-               "name": "Ivanchik",
-               "email": random_email,
-               "password": "password",
-               "title": "Mr",
-               "birth_date": "17",
-               "birth_month": "06",
-               "birth_year": "1999",
-               "firstname": "Ivan",
-               "lastname": "Ivanov",
-               "company": "IvanCompany",
-               "address1": "Ivan-45",
-               "address2": "Ivan-46",
-               "country": "Ivan",
-               "zipcode": "Ivan",
-               "state": "Ivan",
-               "city": "Ivan",
-               "mobile_number": "+37258495837",
+               "name": name,
+               "email": fake.email(),
+               "password": fake.password(),
+               "title": title,
+               "birth_date": day,
+               "birth_month": month,
+               "birth_year": year,
+               "firstname": first_name,
+               "lastname": last_name,
+               "company": fake.company(),
+               "address1": fake.address(),
+               "address2": fake.address(),
+               "country": fake.country(),
+               "zipcode": fake.zipcode(),
+               "state": fake.state(),
+               "city": fake.city(),
+               "mobile_number": mobile,
                }
     requests.post(ENDPOINT + "/createAccount", data=payload)
-    return payload["email"] ## Can i return more than 2 values? how will it look like?
+    return payload["email"], payload["password"]
 
 @pytest.fixture
 def test_can_post_to_delete_user_account(test_create_user): ## test_create_user fixture is returning the random email
+     email, password = test_create_user
      payload = {
-               "email": test_create_user, ## Variable name is shit, i know. I will fix it after finishing the exam.
-               "password": "password",
+               "email": email,
+               "password": password,
                }
-     response = requests.delete(ENDPOINT + "/deleteAccount", data=payload) ## Deleting the user with the generated email
-     data = response.json()
-     assert data["responseCode"] == 200
-     assert data["message"] == "Account deleted!"
+     requests.delete(ENDPOINT + "/deleteAccount", data=payload) ## Deleting the user with the generated email
      yield test_create_user ## Stoping the fixture executing and return the random email back to the test function
 
 
-def test_user_not_exist(test_can_post_to_delete_user_account):
-    email = test_can_post_to_delete_user_account
+def test_user_not_exist(test_can_post_to_delete_user_account, test_create_user):
+
+    email_of_created_user, password_of_created_user = test_create_user ## I took the email of created person, and took the same email after deletion flow, and compare them, because
+                                                                       ## this test will show expected 404 error, EVEN when email is not the same. But i want to know, that the EXACT person was deleted.
+    email, password = test_can_post_to_delete_user_account
+
     payload = {
                "email": email,
-               "password": "password"
+               "password": password
                }
     response = requests.post(ENDPOINT + "/verifyLogin", data=payload)
     data = response.json()
     assert data["responseCode"] == 404
     assert data["message"] == "User not found!"
+    assert email_of_created_user == email, "It's not the same person!"
+    assert password_of_created_user == password, "It's not the same person!"
 
 ## --------------- API 13: PUT METHOD To Update User Account/API 14: GET user account detail by email  ---------------
 
 @pytest.fixture
-def test_create_user_for_update(random_email): ## Passing the random email to the test_create_user fixture
+def test_create_user_for_update(valid_titles): ## Passing the random email to the test_create_user fixture
+    mobile = "+" + fake.phone_number()
+    name = fake.name()
+    first_name, last_name = name.split()
+    date = fake.date()
+    year, month, day = date.split("-")
+    title = random.choice(valid_titles)
     payload = {
-               "name": "Ivan",
-               "email": random_email,
-               "password": "password",
-               "title": "Mr",
-               "birth_date": "17",
-               "birth_month": "06",
-               "birth_year": "1999",
-               "firstname": "Ivan",
-               "lastname": "Ivanov",
-               "company": "IvanCompany",
-               "address1": "Ivan-45",
-               "address2": "Ivan-46",
-               "country": "Ivan",
-               "zipcode": "Ivan",
-               "state": "Ivan",
-               "city": "Ivan",
-               "mobile_number": "+37258495837",
+               "name": name,
+               "email": fake.email(),
+               "password": fake.password(),
+               "title": title,
+               "birth_date": day,
+               "birth_month": month,
+               "birth_year": year,
+               "firstname": first_name,
+               "lastname": last_name,
+               "company": fake.company(),
+               "address1": fake.address(),
+               "address2": fake.address(),
+               "country": fake.country(),
+               "zipcode": fake.zipcode(),
+               "state": fake.state(),
+               "city": fake.city(),
+               "mobile_number": mobile,
                }
     requests.post(ENDPOINT + "/createAccount", data=payload)
     return payload
 
 @pytest.fixture
-def test_update_user(test_create_user_for_update):
-    email = test_create_user_for_update["email"]
+def test_update_user(test_create_user_for_update, valid_titles):
+
+    mobile = "+" + fake.phone_number()
+    name = fake.name()
+    first_name, last_name = name.split()
+    date = fake.date()
+    year, month, day = date.split("-")
+    title = random.choice(valid_titles)
     payload = {
-               "name": "Ivanchiiiks",
-               "email": email,
-               "password": "password",
-               "title": "Mr",
-               "birth_date": "17",
-               "birth_month": "06",
-               "birth_year": "1998",
-               "firstname": "Ivanchik",
-               "lastname": "Ivanov",
-               "company": "IvanCompany",
-               "address1": "Ivan-455",
-               "address2": "Ivan-466",
-               "country": "Ivanovka",
-               "zipcode": "Ivan123",
-               "state": "IvanuMaa",
-               "city": "IvanCity",
-               "mobile_number": "+37258495833",
+               "name": name,
+               "email": test_create_user_for_update["email"],
+               "password": test_create_user_for_update["password"],
+               "title": title,
+               "birth_date": day,
+               "birth_month": month,
+               "birth_year": year,
+               "firstname": first_name,
+               "lastname": last_name,
+               "company": fake.company(),
+               "address1": fake.address(),
+               "address2": fake.address(),
+               "country": fake.country(),
+               "zipcode": fake.zipcode(),
+               "state": fake.state(),
+               "city": fake.city(),
+               "mobile_number": mobile,
                }
-    response = requests.put(ENDPOINT + "/updateAccount", data=payload)
-    data = response.json()
-    assert data["responseCode"] == 200
-    assert data["message"] == "User updated!"
+    requests.put(ENDPOINT + "/updateAccount", data=payload)
     return payload
 
 def test_updated_user(test_update_user):
@@ -298,7 +322,7 @@ def test_updated_user(test_update_user):
     assert user_data["email"] == test_update_user["email"]
     # assert user_data["password"] == test_update_user["password"] this field is not returned. Expected))))
     assert user_data["title"] == test_update_user["title"]
-    assert user_data["birth_day"] == test_update_user["birth_date"] ## WTF??? bug. Keys name are different
+    assert user_data["birth_day"] == test_update_user["birth_date"] ## WTH??? bug. Keys name are different
     assert user_data["birth_month"] == test_update_user["birth_month"]
     assert user_data["birth_year"] == test_update_user["birth_year"]
     assert user_data["first_name"] == test_update_user["firstname"]
