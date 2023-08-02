@@ -185,12 +185,6 @@ def test_can_post_to_create_user_account(valid_titles):
 
 ## --------------- API 12: DELETE METHOD To Delete User Account ---------------
 
-# @pytest.fixture
-# def random_email():
-#     characters = string.ascii_letters + string.digits
-#     email = ''.join(random.choices(characters, k=10)) + "@mail.com" ## GEnerating the random email
-#     return email
-
 @pytest.fixture
 def test_create_user(valid_titles): ## Passing the random email to the test_create_user fixture
     mobile = "+" + fake.phone_number()
