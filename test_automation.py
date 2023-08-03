@@ -46,7 +46,7 @@ def test_can_get_all_products():
         assert isinstance(userType["usertype"], object), "Key 'usertype' is not of type 'object'"
         sex = userType.get("usertype") ##Getting the user
 
-        assert sex in ["Kids", "Women", "Men", "Attack-helicopter"], "Key 'usertype' is not within allowed range" ## Kids it's a third gender lol
+        assert sex in ["Kids", "Women", "Men"], "Key 'usertype' is not within allowed range"
 
 ## --------------- API 2: POST To All Products List ---------------
 
@@ -94,6 +94,17 @@ def test_can_post_to_search_product():
     for product in product_list:
        category = product["category"]
        assert category["category"] == 'Tshirts', "Response has not only Tshirts"
+
+
+def test_can_post_to_search_product_wrong_value():
+
+    payload = {"search_product": "tshit"}
+    response = requests.post(ENDPOINT + "/searchProduct", data=payload)
+    data = response.json()
+    product_list = data["products"]
+    assert data["responseCode"] == 200
+    assert data["products"] == []
+
 
 ## --------------- API 6: POST To Search Product without search_product parameter ---------------
 
@@ -183,6 +194,38 @@ def test_can_post_to_create_user_account(valid_titles):
     assert data["responseCode"] == 201
     assert data["message"] == "User created!"
 
+def test_can_post_to_create_user_account_empty_fields():
+    payload = {
+               "name": "",
+               "email": "",
+               "password": "",
+               "title": "",
+               "birth_date": "",
+               "birth_month": "",
+               "birth_year": "",
+               "firstname": "",
+               "lastname": "",
+               "company": "",
+               "address1": "",
+               "address2": "",
+               "country": "",
+               "zipcode": "",
+               "state": "",
+               "city": "",
+               "mobile_number": "",
+               }
+    response = requests.post(ENDPOINT + "/createAccount", data=payload)
+    data = response.json()
+    assert data["responseCode"] == 400
+    assert data["message"] == "Required fields are empty" ##The test will be success, but it seems not ok. Let's imagine, that this is not expected and test found the bug
+
+def test_can_post_to_create_user_account_empty_payload():
+    payload = {}
+    response = requests.post(ENDPOINT + "/createAccount", data=payload)
+    data = response.json()
+    assert data["responseCode"] == 400
+    assert data["message"] == "Bad request, name parameter is missing in POST request."
+
 ## --------------- API 12: DELETE METHOD To Delete User Account ---------------
 
 @pytest.fixture
@@ -242,6 +285,31 @@ def test_user_not_exist(test_can_post_to_delete_user_account, test_create_user):
     assert data["message"] == "User not found!"
     assert email_of_created_user == email, "It's not the same person!"
     assert password_of_created_user == password, "It's not the same person!"
+
+def test_can_post_to_delete_user_account_email_absent(test_create_user): ## Deleting user only with password. This is what we do not expect
+     email, password = test_create_user
+     payload = {
+               "password": password,
+               }
+     data = requests.delete(ENDPOINT + "/deleteAccount", data=payload)
+     assert data["responseCode"] == 404
+     assert data["message"] == "User not found!"
+
+def test_can_post_to_delete_user_account_empty_payload(): ## the response is showing 200. Which user were deleted?
+     payload = {}
+     data = requests.delete(ENDPOINT + "/deleteAccount", data=payload)
+     assert data["responseCode"] == 404
+     assert data["message"] == "User not found!"
+
+def test_can_post_to_delete_user_account_password_absent(test_create_user): ## Same...
+     email = test_create_user
+     payload = {
+               "password": email,
+               }
+     data = requests.delete(ENDPOINT + "/deleteAccount", data=payload)
+     assert data["responseCode"] == 404
+     assert data["message"] == "User not found!"
+
 
 ## --------------- API 13: PUT METHOD To Update User Account/API 14: GET user account detail by email  ---------------
 
@@ -329,3 +397,19 @@ def test_updated_user(test_update_user):
     assert user_data["state"] == test_update_user["state"]
     assert user_data["city"] == test_update_user["city"]
     # assert user_data["mobile_number"] == test_update_user["mobile_number"] where is mobile??? lol. Get request doesn't returned the mobile
+
+def test_updated_user_empty_payload():
+    payload = {}
+    response = requests.get(ENDPOINT + "/getUserDetailByEmail", params=payload)
+    data = response.json()
+    assert data["responseCode"] == 400
+    assert data["message"] == "Bad request, email parameter is missing in GET request."
+
+
+def test_update_user_empty_payload():
+    payload = {}
+    data = requests.put(ENDPOINT + "/updateAccount", data=payload) ## What exactly does this endpoint update?
+    assert data["responseCode"] == 404
+    assert data["message"] == "User not found!"
+
+
